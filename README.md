@@ -1,4 +1,4 @@
-#### This is a simple project in which curd operations are performend using nest.js with mongodb. 
+#### This is a simple project in which curd operations are performed using nest.js with mongodb. 
 
 ## Installation
 
