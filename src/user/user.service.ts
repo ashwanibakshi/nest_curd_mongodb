@@ -2,12 +2,17 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schema/user.schema';
-import { isObjectIdOrHexString, Model } from 'mongoose';
-import { userDto } from './dto/user.dto';
+import { Model } from 'mongoose';
+import { userDto, userCredDto } from './dto/user.dto';
+import { UserCreds, UserCredsDocument } from './schema/userdetail.schema';
 
 @Injectable()
 export class UserService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(UserCreds.name)
+    private userCredsModel: Model<UserCredsDocument>,
+  ) {}
 
   async createUser(user: userDto): Promise<User> {
     try {
@@ -55,5 +60,26 @@ export class UserService {
     } catch (error) {
       return error.message;
     }
+  }
+  async checkUser(email: string, password: string) {
+    try {
+      console.log('email', email);
+      const user = await this.userCredsModel.findOne({ email });
+      if (user != null || user != undefined) {
+        if (user.password === password) {
+          return user;
+        } else {
+          return 'wrong credentials';
+        }
+      } else {
+        return 'user not found';
+      }
+    } catch (error) {
+      return error.message;
+    }
+  }
+  async registerUser(user: userCredDto): Promise<UserCreds> {
+    const newUser = await new this.userCredsModel(user);
+    return newUser.save();
   }
 }
