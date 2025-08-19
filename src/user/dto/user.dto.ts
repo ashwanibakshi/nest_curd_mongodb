@@ -5,6 +5,6 @@ export class userDto {
 }
 
 export class userCredDto {
-  email: string;
-  password: string;
+  readonly email: string;
+  readonly password: string;
 }

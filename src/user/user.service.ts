@@ -1,10 +1,11 @@
 /* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User, UserDocument } from './schema/user.schema';
 import { Model } from 'mongoose';
 import { userDto, userCredDto } from './dto/user.dto';
 import { UserCreds, UserCredsDocument } from './schema/userdetail.schema';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -61,25 +62,35 @@ export class UserService {
       return error.message;
     }
   }
-  async checkUser(email: string, password: string) {
+  async checkUser(email: string, password: string): Promise<any> {
     try {
-      console.log('email', email);
       const user = await this.userCredsModel.findOne({ email });
       if (user != null || user != undefined) {
-        if (user.password === password) {
-          return user;
-        } else {
-          return 'wrong credentials';
+        const isMatch = await bcrypt.compare(password, user.password);
+        console.log(isMatch);
+        if (isMatch) {
+          return 'creds matched';
+        } else if (!isMatch) {
+          return 'wrong creds';
         }
       } else {
-        return 'user not found';
+        return 'user doesnt exist';
       }
     } catch (error) {
       return error.message;
     }
   }
   async registerUser(user: userCredDto): Promise<UserCreds> {
-    const newUser = await new this.userCredsModel(user);
-    return newUser.save();
+    try {
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(user.password, saltRounds);
+      const newUser = new this.userCredsModel({
+        ...user,
+        password: hashedPassword,
+      });
+      return newUser.save();
+    } catch (error) {
+      return error.message;
+    }
   }
 }
