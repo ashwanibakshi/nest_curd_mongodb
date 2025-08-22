@@ -6,6 +6,7 @@ import { Model } from 'mongoose';
 import { userDto, userCredDto } from './dto/user.dto';
 import { UserCreds, UserCredsDocument } from './schema/userdetail.schema';
 import * as bcrypt from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UserService {
@@ -13,6 +14,7 @@ export class UserService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(UserCreds.name)
     private userCredsModel: Model<UserCredsDocument>,
+    private jwtService: JwtService,
   ) {}
 
   async createUser(user: userDto): Promise<User> {
@@ -69,7 +71,10 @@ export class UserService {
         const isMatch = await bcrypt.compare(password, user.password);
         console.log(isMatch);
         if (isMatch) {
-          return 'creds matched';
+          const payload = { id: user._id, email: user.email };
+          return {
+            access_token: await this.jwtService.signAsync(payload),
+          };
         } else if (!isMatch) {
           return 'wrong creds';
         }
